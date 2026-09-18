@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>漢字 Symbol 調試器</title>
+<style>
+:root{--bg:#f6f5f1;--panel:#fff;--ink:#25251f;--muted:#77756d;--line:#ddd9cf;--accent:#375b4b;--accent2:#e9f0ec;--warn:#9a5a24;--shadow:0 10px 30px #403a2d12}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}.app{max-width:1180px;margin:auto;padding:18px}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.title{font-size:24px;font-weight:750}.sub{color:var(--muted);font-size:13px;margin-top:3px}.status{font-size:13px;color:var(--muted)}.tabs{display:flex;gap:6px;margin:18px 0 12px}.tab{border:1px solid var(--line);background:transparent;padding:9px 14px;border-radius:10px}.tab.on{background:var(--ink);color:white;border-color:var(--ink)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.grow{flex:1}.btn{border:1px solid var(--line);background:white;padding:8px 12px;border-radius:9px}.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}.btn.danger{color:#9a3434}.text{border:1px solid var(--line);background:white;border-radius:9px;padding:8px 10px;min-width:0}.article{width:100%;min-height:128px;resize:vertical;line-height:1.65}.controls{margin-top:12px}.stats{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.pill{padding:5px 9px;border-radius:999px;background:#efede7;font-size:13px}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:9px}.card{position:relative;min-height:112px;border:1px solid var(--line);border-radius:13px;background:white;padding:9px;text-align:center;transition:.12s}.card:hover,.card.active{border-color:var(--accent);box-shadow:0 0 0 2px #375b4b20}.card.changed:after{content:"";position:absolute;right:7px;top:7px;width:7px;height:7px;border-radius:50%;background:#d77a35}.han{font-size:31px;line-height:1.15}.reading{font-size:11px;color:var(--muted);height:31px;overflow:hidden;margin:5px 0}.symbol{font-size:14px;font-weight:700;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.symbol.none{color:var(--warn)}.empty{padding:45px;text-align:center;color:var(--muted)}.side{position:fixed;inset:0 0 0 auto;width:min(430px,100%);background:white;border-left:1px solid var(--line);box-shadow:-12px 0 35px #0002;padding:18px;z-index:4;transform:translateX(102%);transition:.2s;overflow:auto}.side.open{transform:none}.shade{position:fixed;inset:0;background:#0003;z-index:3;display:none}.shade.open{display:block}.bigchar{font-size:70px;text-align:center}.choice-search{width:100%;margin:10px 0}.choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px}.choice{border:1px solid var(--line);background:white;border-radius:9px;padding:9px 6px;overflow:hidden;text-overflow:ellipsis}.choice.on{background:var(--accent2);border-color:var(--accent);color:var(--accent);font-weight:700}.section{display:none}.section.on{display:block}.table{width:100%;border-collapse:collapse}.table th,.table td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left}.table input{width:100%}.muted{color:var(--muted);font-size:13px}.drop{border:1px dashed #aaa59a;border-radius:12px;padding:16px;text-align:center;color:var(--muted);margin:12px 0}.file{display:none}.footer-note{margin-top:15px;color:var(--muted);font-size:12px}.lock{display:flex;align-items:center;gap:6px}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#24241f;color:white;padding:9px 13px;border-radius:9px;z-index:9;opacity:0;pointer-events:none;transition:.2s}.toast.show{opacity:1}@media(max-width:600px){.app{padding:12px}.cards{grid-template-columns:repeat(3,1fr)}.card{min-height:104px}.han{font-size:28px}}
+
+.syncbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;background:#eaf0ec;border-radius:12px;font-size:13px}.syncbar #cloudStatus{flex:1;min-width:180px;overflow-wrap:anywhere}.error{color:#a33730}h2{font-size:18px;margin:0 0 8px}.write-options{margin-top:14px;padding:12px;background:#f6f5f1;border-radius:10px}summary{cursor:pointer;font-weight:600}.conflict{padding:10px;margin:8px 0;background:#fff3e8;border-radius:10px}.conflict .btn{margin-right:8px}[hidden]{display:none!important}button:disabled{cursor:default;opacity:.5}#cloudUrl{min-width:200px;width:100%}a{color:var(--accent)}.side:not(.open){visibility:hidden}.table td:first-child{width:20%}.table td:last-child{width:65px}.table td:nth-child(3){width:65px}@media(max-width:600px){.syncbar .btn{padding:6px 9px}.table th,.table td{padding:7px 3px;font-size:13px}.table .text{padding:7px 5px}.row>.grow{min-width:140px}.write-options .row{align-items:stretch}.panel{padding:12px}}
+</style>
+</head>
+<body>
+<main class="app">
+  <div class="top"><div><div class="title">漢字 Symbol 調試器</div><div class="sub">漢字 → symbol · 從雲端 JSON 載入，共用同一份分類</div></div><div class="status" id="saveStatus">尚未修改</div></div>
+  <div class="tabs"><button class="tab on" data-tab="annotate">文章調試</button><button class="tab" data-tab="symbols">Symbol 集合</button><button class="tab" data-tab="data">資料與同步</button></div>
+
+  <div class="syncbar"><span id="cloudStatus">尚未連結資料</span><span class="muted" id="pendingStatus">未送出 0 項</span><button class="btn" id="setupCloud">設定雲端</button><button class="btn" id="refreshCloud">重新讀取</button></div>
+  <section id="annotate" class="section on">
+    <div class="panel">
+      <textarea id="article" class="text article" placeholder="貼上中文文章或句子。相同漢字共用同一個 symbol，修改一次會全部同步。"></textarea>
+      <div class="row controls">
+        <button class="btn primary" id="renderBtn">載入文章</button><button class="btn" id="exampleBtn">試用例句</button>
+        <select class="text" id="viewFilter"><option value="all">全部漢字</option><option value="unassigned">只看未分類</option><option value="changed">只看本次已修改</option></select>
+        <label class="lock"><input type="checkbox" id="uniqueOnly"> 相同字只顯示一次</label>
+        <button class="btn" id="nextUnassigned">下一個未分類</button>
+        <button class="btn" id="undoBtn">復原</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </section>
+
+  <section id="symbols" class="section">
+    <div class="panel">
+      <div class="row"><input id="newSymbol" class="text grow" placeholder="新增 symbol（如：水、口、艹）"><input id="newNote" class="text grow" placeholder="備註（可空白）"><button id="addSymbol" class="btn primary">新增</button></div>
+      <p class="muted">這裡只定義可選的分類標籤。刪除仍被漢字使用的 symbol 時，會先要求確認。</p>
+      <table class="table"><thead><tr><th>Symbol</th><th>備註</th><th>已指派字數</th><th></th></tr></thead><tbody id="symbolRows"></tbody></table>
+    </div>
+  </section>
+
+  <section id="data" class="section">
+    <div class="panel">
+      <h2>雲端資料來源</h2>
+      <p class="muted">預設讀取 jeffeuxMartin/ime-hanzi-hint 的 JSON，也接受 GitHub repository、Gist 或其他公開 JSON 網址。分類表由雲端檔案載入，HTML 不內嵌字表。</p>
+      <div class="row"><input id="cloudUrl" class="text grow" type="url" placeholder="GitHub repository、Gist 或 JSON 網址" aria-label="雲端 JSON 網址"><button class="btn primary" id="connectCloud">連線並載入</button></div>
+      <div class="row controls"><label class="lock"><input type="checkbox" id="autoPull" checked> 每 15 秒檢查更新；切回此頁也重新讀取</label><button class="btn" id="disconnectCloud">中斷連線</button></div>
+      <div id="gistFileRow" class="row controls" hidden><label for="gistFiles">JSON 檔案</label><select class="text" id="gistFiles"></select></div>
+      <p class="muted">同一網址可在手機與電腦使用。尚未送出的修改會保留；同一筆資料發生分歧時，請在下方選擇。本機快取可供斷線時繼續使用。</p>
+      <div id="conflicts" hidden></div>
+      <details class="write-options"><summary>從這個頁面寫回 GitHub（選用）</summary>
+        <p class="muted">公開檔案讀取不需要登入。直接寫回需要可修改此檔案的 GitHub 憑證，只在本分頁記憶體使用；重新開啟須再輸入。不要把憑證放進 JSON。</p>
+        <div class="row"><input class="text grow" id="gistToken" type="password" autocomplete="off" placeholder="在此頁輸入 GitHub 寫入憑證" aria-label="GitHub 寫入憑證"><button class="btn" id="enableWrite">載入憑證</button></div>
+        <div class="row controls"><label class="lock"><input type="checkbox" id="autoWrite"> 修改後自動寫回</label><button class="btn primary" id="pushNow" disabled>送出修改</button><span id="writeState" class="muted">尚未啟用</span></div>
+        <p class="muted">每次寫回會先重新比對雲端。兩台同時編輯時，請等一台顯示「已寫回」再在另一台繼續。</p>
+      </details>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <h2>匯入與備份</h2>
+      <p class="muted">也可以匯入 JSON 離線調試；一般 JSON 主機需允許跨來源讀取（CORS）。</p>
+      <div class="row"><button class="btn primary" data-pick="configFile">匯入 JSON</button><button class="btn" data-pick="charFile">匯入 charhint.tsv</button><button class="btn" data-pick="zhuyinFile">匯入 zhuyin.cin</button></div>
+      <input class="file" type="file" id="configFile" accept=".json,application/json"><input class="file" type="file" id="charFile" accept=".tsv,.txt"><input class="file" type="file" id="zhuyinFile" accept=".cin,.txt">
+      <div class="drop" id="dropZone">拖入 JSON、charhint.tsv 或 zhuyin.cin</div>
+      <div class="row"><button class="btn primary" id="exportJson">匯出完整 JSON</button><button class="btn" id="exportTsv">匯出 charhint.tsv</button><button class="btn" id="exportSymbols">匯出 symbols.tsv</button><button class="btn danger" id="clearLocal">清除本機暫存</button></div>
+      <p class="footer-note">未啟用寫回時，修改只在本機；可匯出 JSON 後更新雲端檔案。部首初標：<a href="https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip" target="_blank" rel="noopener">Unicode Unihan 17.0.0</a>，取 kRSUnicode 第一筆部首。資料來源與授權記錄保留在 JSON。</p>
+    </div>
+  </section>
+</main>
+
+<div class="shade" id="shade"></div><aside class="side" id="editor"><div class="row"><button class="btn" id="closeEditor">關閉</button><span class="muted grow" id="editMeta"></span></div><div class="bigchar" id="editChar"></div><div class="muted" style="text-align:center" id="editReading"></div><input class="text choice-search" id="choiceSearch" placeholder="搜尋 symbol"><div class="choices" id="choices"></div></aside><div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const STORE='hanSymbolDebugger.cloud.v2', LEGACY='hanSymbolDebugger.v1';
+const DEFAULT_SOURCE_URL='https://github.com/jeffeuxMartin/ime-hanzi-hint/blob/main/han_symbol_config.json';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+const clone=x=>JSON.parse(JSON.stringify(x));
+const eq=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
+const empty=()=>({schema:'han-symbol-map',version:2,charSymbols:{},symbols:{},readings:{}});
+let base=empty(), config=empty(), pending=new Map(), conflicts=new Map(), source=null;
+let undoStack=[], changed=new Set(), activeChar=null, busy=false, token='', autoWrite=false, editSeq=0, shownLimit=1200;
+let pullTimer=null, writeTimer=null, lastPull='', cached=false;
+const HAN=/\p{Script=Han}/u;
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(t){$('#toast').textContent=t;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),2400);}
+function setStatus(t,error=false){$('#cloudStatus').textContent=t;$('#cloudStatus').classList.toggle('error',error);}
+function normalize(d){
+ if(!d||typeof d!=='object'||Array.isArray(d)||!d.charSymbols||!d.symbols)throw Error('JSON 需要 charSymbols 和 symbols 兩張表。');
+ const out={...d,schema:'han-symbol-map',version:2,charSymbols:{},symbols:{},readings:{}};
+ for(const [s,v] of Object.entries(d.symbols)){
+  if(!s.trim()||/[\t\r\n]/.test(s)||['__proto__','constructor','prototype'].includes(s))throw Error('Symbol 名稱不合法。');
+  out.symbols[s]=typeof v==='string'?{note:v}:{...(v||{}),note:String(v?.note||'')};
+ }
+ for(const [c,s] of Object.entries(d.charSymbols)){
+  if([...c].length!==1)continue;
+  if(typeof s!=='string')throw Error('漢字分類值必須是 symbol 字串。');
+  if(s&&!own(out.symbols,s))throw Error(`「${c}」使用不存在的 symbol「${s}」。`);
+  out.charSymbols[c]=s;
+ }
+ for(const [c,v] of Object.entries(d.readings||{}))out.readings[c]=(Array.isArray(v)?v:[v]).filter(x=>typeof x==='string');
+ return out;
+}
+function val(d,group,key){return own(d[group]||{},key)?d[group][key]:null;}
+function put(d,group,key,v){if(v===null)delete d[group][key];else d[group][key]=clone(v);}
+const path=(g,k)=>JSON.stringify([g,k]);
+function remember(){
+ try{localStorage.setItem(STORE,JSON.stringify({base,pending:[...pending],source,article:$('#article').value,unique:$('#uniqueOnly').checked,poll:$('#autoPull').checked}));cached=true;$('#saveStatus').textContent='本機暫存 '+new Date().toLocaleTimeString();}
+ catch(e){cached=false;$('#saveStatus').textContent='本機暫存失敗，請匯出 JSON';}
+ $('#pendingStatus').textContent=`未送出 ${pending.size} 項${conflicts.size?' · '+conflicts.size+' 項衝突':''}`;
+ $('#pushNow').disabled=!(source?.gistId||source?.repoFullName)||!token||busy||!pending.size||conflicts.size>0;
+}
+function rebuild(){config=clone(base);for(const p of pending.values())put(config,p.group,p.key,p.next);}
+function reconcile(incoming){
+ base=clone(incoming);conflicts.clear();
+ for(const [id,p] of pending){const remote=val(base,p.group,p.key);if(eq(remote,p.next)){pending.delete(id);continue;}if(!eq(remote,p.before))conflicts.set(id,{...p,remote});}
+ rebuild();
+ // A remote symbol deletion cannot silently erase a local character classification.
+ for(const [c,s] of Object.entries(config.charSymbols))if(s&&!own(config.symbols,s))conflicts.set(path('reference',c),{group:'reference',key:c,next:s,remote:base.charSymbols[c]??null});
+ remember();renderAll();
+}
+function record(group,key,next){
+ const id=path(group,key), before=val(base,group,key);put(config,group,key,next);
+ if(eq(before,next)){pending.delete(id);conflicts.delete(id);}else pending.set(id,{group,key,before:clone(before),next:clone(next),seq:++editSeq});
+}
+function commitEdits(){config.updatedAt=new Date().toISOString();remember();renderAll();scheduleWrite();}
+function hanChars(t){return [...t].filter(c=>HAN.test(c));}
+function renderCards(){
+ const all=hanChars($('#article').value),uni=[...new Set(all)],assigned=uni.filter(c=>config.charSymbols[c]).length;
+ const size=Object.keys(config.charSymbols).filter(c=>config.charSymbols[c]).length;
+ $('#stats').innerHTML=`<span class="pill">文章 ${all.length} 字／${uni.length} 種</span><span class="pill">已分類 ${assigned}</span><span class="pill">未分類 ${uni.length-assigned}</span><span class="pill">全表 ${size.toLocaleString()} 字</span><span class="pill">${Object.keys(config.symbols).length} symbols</span>`;
+ let a=$('#uniqueOnly').checked?uni:all,f=$('#viewFilter').value;
+ if(f==='unassigned')a=a.filter(c=>!config.charSymbols[c]);if(f==='changed')a=a.filter(c=>changed.has(c));
+ const box=$('#cards');box.replaceChildren();
+ if(!a.length){const e=document.createElement('div');e.className='empty';e.textContent=Object.keys(config.symbols).length?'貼入文章開始調試；也可以切換篩選條件。':'先到「資料與同步」連結雲端 JSON，或匯入隨附的部首初始 JSON。';box.append(e);return;}
+ const frag=document.createDocumentFragment();
+ for(const c of a.slice(0,shownLimit)){const s=config.charSymbols[c]||'',b=document.createElement('button');b.className='card'+(changed.has(c)?' changed':'');b.dataset.char=c;b.setAttribute('aria-label',`${c}，${s||'未分類'}，修改分類`);b.innerHTML=`<div class="han">${esc(c)}</div><div class="reading">${esc((config.readings[c]||[]).join('、')||'—')}</div><div class="symbol ${s?'':'none'}">${esc(s||'未分類')}</div>`;b.onclick=()=>openEditor(c);frag.appendChild(b);}
+ box.appendChild(frag);if(a.length>shownLimit){const b=document.createElement('button');b.className='btn';b.textContent=`顯示更多（尚有 ${a.length-shownLimit} 字）`;b.onclick=()=>{shownLimit+=1200;renderCards();};box.append(b);}
+}
+function symbolOrder(a,b){return (config.symbols[a]?.radicalNumber||999)-(config.symbols[b]?.radicalNumber||999)||a.localeCompare(b,'zh-Hant');}
+function renderSymbols(){
+ const counts={};Object.values(config.charSymbols).forEach(s=>{if(s)counts[s]=(counts[s]||0)+1;});const body=$('#symbolRows');body.replaceChildren();
+ for(const s of Object.keys(config.symbols).sort(symbolOrder)){const tr=document.createElement('tr');tr.innerHTML=`<td><input aria-label="Symbol 名稱" class="text sym-name" value="${esc(s)}" data-old="${esc(s)}"></td><td><input aria-label="Symbol 備註" class="text sym-note" value="${esc(config.symbols[s]?.note||'')}" data-symbol="${esc(s)}"></td><td>${counts[s]||0}</td><td><button class="btn danger sym-del" data-symbol="${esc(s)}">刪除</button></td>`;body.append(tr);}
+ body.querySelectorAll('.sym-note').forEach(x=>x.onchange=()=>{record('symbols',x.dataset.symbol,{...config.symbols[x.dataset.symbol],note:x.value});commitEdits();});
+ body.querySelectorAll('.sym-name').forEach(x=>x.onchange=()=>renameSymbol(x.dataset.old,x.value));
+ body.querySelectorAll('.sym-del').forEach(x=>x.onclick=()=>deleteSymbol(x.dataset.symbol,counts[x.dataset.symbol]||0));
+}
+function renderConflicts(){
+ const box=$('#conflicts');box.replaceChildren();box.hidden=!conflicts.size;
+ for(const [id,p] of conflicts){const row=document.createElement('div');row.className='conflict';const info=document.createElement('p');info.textContent=`${p.key}：本機 ${format(p.next)} ／ 雲端 ${format(p.remote)}`;row.append(info);
+  for(const [label,keepLocal] of [['採用雲端',false],['保留本機',true]]){const b=document.createElement('button');b.className='btn';b.textContent=label;b.onclick=()=>resolveConflict(id,keepLocal);row.append(b);}box.append(row);}
+}
+function format(v){if(v===null)return '（無）';if(typeof v==='object')return JSON.stringify(v);return v||'未分類';}
+function resolveConflict(id,keepLocal){const p=conflicts.get(id);if(!p)return;
+ if(p.group==='reference'){
+  if(keepLocal)record('symbols',p.next,{note:'保留本機分類使用的 symbol'});else record('charSymbols',p.key,p.remote);
+ }else if(keepLocal){const e=pending.get(id);if(e)e.before=clone(p.remote);}else pending.delete(id);
+ conflicts.delete(id);reconcile(base);scheduleWrite();
+}
+function renderAll(){renderCards();if($('#symbols').classList.contains('on')&&!$('#symbolRows').contains(document.activeElement))renderSymbols();renderConflicts();if(activeChar)renderChoices();}
+function openEditor(c){activeChar=c;$('#editChar').textContent=c;$('#editReading').textContent=(config.readings[c]||[]).join('、')||'沒有讀音資料';$('#choiceSearch').value='';renderChoices();$('#editor').classList.add('open');$('#shade').classList.add('open');}
+function closeEditor(){$('#editor').classList.remove('open');$('#shade').classList.remove('open');activeChar=null;}
+function renderChoices(){
+ const q=$('#choiceSearch').value.trim().toLowerCase(),box=$('#choices'),current=config.charSymbols[activeChar]||'';box.replaceChildren();$('#editMeta').textContent='目前：'+(current||'未分類');
+ const list=['',...Object.keys(config.symbols).sort(symbolOrder).filter(s=>!q||s.toLowerCase().includes(q)||(config.symbols[s]?.note||'').toLowerCase().includes(q))];
+ for(const s of list){const b=document.createElement('button');b.className='choice'+(s===current?' on':'');b.textContent=s||'∅ 未分類';b.title=config.symbols[s]?.note||'';b.onclick=()=>assign(activeChar,s);box.append(b);}
+}
+function assign(c,s){const old=val(config,'charSymbols',c);if(old===s)return;undoStack.push({c,old});record('charSymbols',c,s);changed.add(c);commitEdits();}
+function undo(){const x=undoStack.pop();if(!x)return toast('沒有可復原的修改');record('charSymbols',x.c,x.old);changed.add(x.c);commitEdits();toast('已復原 '+x.c);}
+function validSymbol(s){return s.trim()&&!/[\t\r\n]/.test(s)&&!['__proto__','constructor','prototype'].includes(s);}
+function renameSymbol(old,n){n=n.trim();if(!validSymbol(n)||n===old)return renderSymbols();if(config.symbols[n]&&!confirm(`「${n}」已存在，要合併嗎？`))return renderSymbols();record('symbols',n,config.symbols[n]||config.symbols[old]);for(const c in config.charSymbols)if(config.charSymbols[c]===old){record('charSymbols',c,n);changed.add(c);}record('symbols',old,null);undoStack=[];commitEdits();}
+function deleteSymbol(s,count){if(count&&!confirm(`仍有 ${count} 個字使用「${s}」。刪除後這些字會變成未分類，確定嗎？`))return;for(const c in config.charSymbols)if(config.charSymbols[c]===s)record('charSymbols',c,'');record('symbols',s,null);undoStack=[];commitEdits();}
+function parseSource(input){
+ let u;try{u=new URL(input.trim());}catch(e){throw Error('請貼上完整 GitHub 或 JSON 網址。');}
+ if(u.username||u.password)throw Error('網址不能含有登入資訊。');
+ if(u.protocol!=='https:'&&!(u.protocol==='http:'&&['localhost','127.0.0.1'].includes(u.hostname)))throw Error('請使用 HTTPS 網址。');
+ const parts=u.pathname.split('/').filter(Boolean);let gistId='',filename='';
+ if(u.hostname==='gist.github.com'){gistId=parts.find(x=>/^[a-f\d]{5,64}$/i.test(x))||'';}
+ else if(u.hostname==='gist.githubusercontent.com'&&parts[2]==='raw'){gistId=parts[1];let rest=parts.slice(3);if(/^[a-f\d]{40}$/i.test(rest[0]||''))rest.shift();filename=decodeURIComponent(rest.join('/'));}
+ if(gistId)return {input:u.href,gistId,filename,rawUrl:'',label:'Gist'};
+ if(u.hostname==='github.com'&&parts.length>=2){
+  const owner=parts[0],repo=parts[1].replace(/\.git$/,'');let branch='main',filePath='han_symbol_config.json';
+  if(parts[2]==='blob'||parts[2]==='raw'){branch=parts[3]||branch;filePath=decodeURIComponent(parts.slice(4).join('/'))||filePath;}
+  return {input:u.href,repoFullName:owner+'/'+repo,branch,path:filePath,label:owner+'/'+repo+' / '+filePath};
+ }
+ if(u.hostname==='raw.githubusercontent.com'&&parts.length>=4){
+  const owner=parts[0],repo=parts[1],branch=parts[2],filePath=decodeURIComponent(parts.slice(3).join('/'));
+  return {input:u.href,repoFullName:owner+'/'+repo,branch,path:filePath,label:owner+'/'+repo+' / '+filePath};
+ }
+ return {input:u.href,url:u.href,label:'JSON 網址'};
+}
+function bytesToBase64(text){
+ const bytes=new TextEncoder().encode(text);let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(binary);
+}
+function base64ToText(text){const binary=atob(text.replace(/\s/g,'')),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}
+async function fetchText(url,auth=false,method='GET',body){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+ try{const headers={Accept:auth?'application/vnd.github+json':'application/json'};if(auth&&token)headers.Authorization='Bearer '+token;if(body)headers['Content-Type']='application/json';
+  const r=await fetch(url,{method,headers,body:body?JSON.stringify(body):undefined,signal:controller.signal,cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'});
+  if(!r.ok)throw Error(`HTTP ${r.status}${r.status===403||r.status===429?'（權限或請求次數限制）':''}`);return await r.text();
+ }finally{clearTimeout(timer);}
+}
+async function readRemote(fresh=false){
+ if(!source)throw Error('尚未連結雲端檔案。');
+ if(source.repoFullName){
+  const [owner,repo]=source.repoFullName.split('/'),encodedPath=source.path.split('/').map(encodeURIComponent).join('/');
+  const api=`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}?ref=${encodeURIComponent(source.branch)}`;
+  const data=JSON.parse(await fetchText(api,true));if(data.type!=='file'||!data.content)throw Error('GitHub 路徑不是可讀取的 JSON 檔案。');
+  source.sha=data.sha;source.label=source.repoFullName+' / '+source.path;return normalize(JSON.parse(base64ToText(data.content)));
+ }
+ if(source.gistId&&(!source.rawUrl||fresh)){
+  const info=JSON.parse(await fetchText(`https://api.github.com/gists/${source.gistId}`,true));
+  const files=Object.values(info.files||{}).filter(f=>/\.json$/i.test(f.filename));
+  if(!files.length)throw Error('這個 Gist 裡沒有 JSON 檔案。請先放入 han_symbol_config.json。');
+  $('#gistFiles').replaceChildren();for(const f of files){const o=document.createElement('option');o.value=f.filename;o.textContent=f.filename;$('#gistFiles').append(o);}$('#gistFileRow').hidden=files.length<=1;
+  const chosen=files.find(f=>f.filename===source.filename)||files.find(f=>f.filename==='han_symbol_config.json')||files[0];
+  source.filename=chosen.filename;$('#gistFiles').value=source.filename;
+  const raw=new URL(chosen.raw_url);if(raw.hostname!=='gist.githubusercontent.com')throw Error('Gist 原始檔網址不符合預期。');
+  raw.pathname=raw.pathname.replace(/\/raw\/[a-f\d]{40}\//i,'/raw/');source.rawUrl=raw.href;source.label='Gist / '+source.filename;
+  if(!chosen.truncated&&typeof chosen.content==='string')return normalize(JSON.parse(chosen.content));
+ }
+ const u=new URL(source.rawUrl||source.url);if(source.gistId)u.searchParams.set('_refresh',Date.now().toString());
+ return normalize(JSON.parse(await fetchText(u.href)));
+}
+async function connect(){
+ if(busy)return;let next;try{next=parseSource($('#cloudUrl').value);}catch(e){return setStatus(e.message,true);}
+ if(pending.size&&!confirm('切換資料來源會保留本機修改並與新來源比對；有分歧時需逐項選擇。繼續嗎？'))return;
+ source=next;token='';autoWrite=false;$('#gistToken').value='';$('#autoWrite').checked=false;$('#writeState').textContent='尚未啟用';
+ remember();await pull(true);startPolling();
+}
+async function pull(fresh=false){
+ if(!source||busy)return;busy=true;setStatus('正在讀取雲端…');
+ try{const incoming=await readRemote(fresh);reconcile(incoming);lastPull=new Date().toLocaleTimeString();setStatus(`${source.label} · 已讀取 ${lastPull}`);$('#cloudUrl').value=source.input;}
+ catch(e){setStatus('讀取失敗，保留目前資料：'+e.message,true);}
+ finally{busy=false;remember();}
+}
+function startPolling(){clearInterval(pullTimer);if($('#autoPull').checked)pullTimer=setInterval(()=>{if(document.visibilityState==='visible')pull(false);},15000);}
+function disconnect(){source=null;token='';autoWrite=false;$('#autoWrite').checked=false;$('#gistToken').value='';$('#writeState').textContent='尚未啟用';clearInterval(pullTimer);$('#gistFileRow').hidden=true;setStatus('已中斷雲端連線；目前資料留在本機');remember();}
+async function enableWrite(){
+ if(!(source?.gistId||source?.repoFullName))return toast('直接寫回目前支援 GitHub repository 或 Gist。');
+ token=$('#gistToken').value.trim();$('#gistToken').value='';if(!token)return toast('請先在這個頁面輸入 GitHub 寫入憑證。');
+ if(busy)return;busy=true;
+ try{const incoming=await readRemote(true);reconcile(incoming);autoWrite=$('#autoWrite').checked;$('#writeState').textContent='憑證已載入本分頁；寫入結果以狀態列為準';setStatus('可嘗試寫回 GitHub；修改會先比對雲端內容');}
+ catch(e){token='';autoWrite=false;$('#autoWrite').checked=false;$('#writeState').textContent='未啟用：'+e.message;}
+ finally{busy=false;remember();scheduleWrite();}
+}
+function scheduleWrite(){clearTimeout(writeTimer);if(autoWrite&&token&&(source?.gistId||source?.repoFullName)&&pending.size&&!conflicts.size)writeTimer=setTimeout(()=>push(),1000);}
+async function push(){
+ if(busy){scheduleWrite();return;}if(!(source?.gistId||source?.repoFullName)||!token||!pending.size)return;
+ busy=true;setStatus('正在比對雲端並寫回…');
+ try{
+  reconcile(await readRemote(true));if(conflicts.size){setStatus('有分類衝突，請先到「資料與同步」選擇保留哪一份。',true);return;}if(!pending.size){setStatus('雲端已包含目前修改');return;}
+  const snapshot=normalize(clone(config));snapshot.updatedAt=new Date().toISOString();snapshot.revision=(Number(base.revision)||0)+1;const cutoff=editSeq;
+  if(source.gistId)await fetchText(`https://api.github.com/gists/${source.gistId}`,true,'PATCH',{files:{[source.filename]:{content:JSON.stringify(snapshot)}}});
+  else{
+   const [owner,repo]=source.repoFullName.split('/'),encodedPath=source.path.split('/').map(encodeURIComponent).join('/');
+   await fetchText(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${encodedPath}`,true,'PUT',{message:`Update ${source.path} from symbol debugger`,content:bytesToBase64(JSON.stringify(snapshot)),sha:source.sha,branch:source.branch});
+  }
+  for(const [id,p] of pending){if(p.seq<=cutoff)pending.delete(id);else p.before=clone(val(snapshot,p.group,p.key));}
+  reconcile(snapshot);lastPull=new Date().toLocaleTimeString();setStatus(`已寫回 ${source.filename} · ${lastPull}`);
+ }catch(e){autoWrite=false;$('#autoWrite').checked=false;setStatus('寫回失敗；修改仍保留在本機：'+e.message,true);}
+ finally{busy=false;remember();scheduleWrite();}
+}
+function download(name,t,type='text/plain;charset=utf-8'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+function exportConfig(){const d=clone(config);d.updatedAt=new Date().toISOString();download('han_symbol_config.json',JSON.stringify(d,null,2),'application/json');}
+function exportTsv(){download('charhint.tsv','hanzi\tsymbol\n'+Object.entries(config.charSymbols).map(([c,s])=>`${c}\t${s}`).join('\n')+'\n');}
+function exportSymbols(){download('symbols.tsv','symbol\tnote\n'+Object.entries(config.symbols).sort(([a],[b])=>symbolOrder(a,b)).map(([s,v])=>`${s}\t${v.note.replace(/[\t\r\n]/g,' ')}`).join('\n')+'\n');}
+function parseCharhint(t){let n=0;for(const line of t.replace(/^\uFEFF/,'').split(/\r?\n/)){const [c,s]=line.split('\t');if(!c||[...c].length!==1||typeof s!=='string'||!validSymbol(s))continue;const v=s.trim();if(!config.symbols[v])record('symbols',v,{note:''});record('charSymbols',c,v);n++;}return n;}
+function parseCin(t){let inKeys=false,inChars=false;const key={},out={};for(const raw of t.replace(/^\uFEFF/,'').split(/\r?\n/)){const line=raw.trim();if(line==='%keyname begin'){inKeys=true;continue;}if(line==='%keyname end'){inKeys=false;continue;}if(line==='%chardef begin'){inChars=true;continue;}if(line==='%chardef end'){inChars=false;continue;}const m=line.match(/^(\S+)\s+(\S+)/);if(!m)continue;if(inKeys)key[m[1]]=m[2];else if(inChars&&[...m[2]].length===1){const c=m[2],r=[...m[1]].map(k=>key[k]||'').join('');(out[c]??=[]);if(r&&!out[c].includes(r))out[c].push(r);}}for(const [c,v] of Object.entries(out))record('readings',c,v);return Object.keys(out).length;}
+async function importFile(file){
+ try{const t=await file.text();if(/\.json$/i.test(file.name)){
+   const d=normalize(JSON.parse(t));if(pending.size&&!confirm('匯入 JSON 會取代目前工作資料與未送出的修改。已匯出備份並要繼續嗎？'))return;
+   disconnect();base=d;pending.clear();conflicts.clear();rebuild();undoStack=[];changed.clear();setStatus('已匯入 '+file.name+'；可連結雲端開始共用');remember();renderAll();
+  }else{const n=/\.cin$/i.test(file.name)?parseCin(t):parseCharhint(t);commitEdits();toast('已匯入 '+n+' 字');}
+ }catch(e){toast('匯入失敗：'+e.message);}
+}
+function restore(){
+ try{const raw=localStorage.getItem(STORE);if(raw){const d=JSON.parse(raw);base=normalize(d.base);pending=new Map(d.pending||[]);source=d.source||null;$('#article').value=d.article||'';$('#uniqueOnly').checked=!!d.unique;$('#autoPull').checked=d.poll!==false;reconcile(base);setStatus(source?'已載入快取，正在檢查雲端…':'已恢復本機暫存');}
+  else{const old=JSON.parse(localStorage.getItem(LEGACY)||'null');if(old?.charSymbols&&old?.symbols){base=normalize(old);rebuild();$('#article').value=old.article||'';setStatus('已保留舊版資料；可匯入部首初始 JSON');}}
+ }catch(e){setStatus('暫存無法讀取；請重新連線或匯入 JSON。',true);}
+ const param=new URLSearchParams(location.search).get('config');if(param){try{source=parseSource(param);}catch(e){setStatus(e.message,true);}}
+ if(!source){try{source=parseSource(DEFAULT_SOURCE_URL);}catch(e){setStatus(e.message,true);}}
+ if(source){$('#cloudUrl').value=source.input;pull(false);startPolling();}renderAll();remember();
+}
+function tab(id){$$('.tab,.section').forEach(x=>x.classList.remove('on'));$(`[data-tab="${id}"]`).classList.add('on');$('#'+id).classList.add('on');if(id==='symbols')renderSymbols();}
+$$('.tab').forEach(b=>b.onclick=()=>tab(b.dataset.tab));$('#setupCloud').onclick=()=>tab('data');$('#connectCloud').onclick=connect;$('#refreshCloud').onclick=()=>pull(false);$('#disconnectCloud').onclick=disconnect;
+$('#autoPull').onchange=()=>{startPolling();remember();};$('#gistFiles').onchange=async()=>{if(busy)return;source.filename=$('#gistFiles').value;source.rawUrl='';await pull(true);};$('#enableWrite').onclick=enableWrite;$('#pushNow').onclick=()=>push();$('#autoWrite').onchange=()=>{autoWrite=$('#autoWrite').checked;remember();scheduleWrite();};
+$('#renderBtn').onclick=()=>{shownLimit=1200;remember();renderCards();};$('#exampleBtn').onclick=()=>{$('#article').value='哈，今天喝水，明天喝茶。部首只是初始分類，我可以自由調整。';remember();renderCards();};
+$('#article').oninput=()=>{clearTimeout(window.articleTimer);window.articleTimer=setTimeout(()=>{shownLimit=1200;remember();renderCards();},250);};$('#viewFilter').onchange=renderCards;$('#uniqueOnly').onchange=()=>{renderCards();remember();};$('#undoBtn').onclick=undo;
+$('#nextUnassigned').onclick=()=>{const c=[...new Set(hanChars($('#article').value))].find(c=>!config.charSymbols[c]);if(c)openEditor(c);else toast('這篇文章都已分類');};$('#closeEditor').onclick=$('#shade').onclick=closeEditor;$('#choiceSearch').oninput=renderChoices;
+$('#addSymbol').onclick=()=>{const s=$('#newSymbol').value.trim();if(!validSymbol(s))return toast('請輸入有效的 symbol');if(config.symbols[s])return toast('Symbol 已存在');record('symbols',s,{note:$('#newNote').value.trim()});$('#newSymbol').value=$('#newNote').value='';commitEdits();};
+$$('[data-pick]').forEach(b=>b.onclick=()=>$('#'+b.dataset.pick).click());$$('.file').forEach(f=>f.onchange=async()=>{if(f.files[0])await importFile(f.files[0]);f.value='';});
+['dragenter','dragover','dragleave','drop'].forEach(n=>$('#dropZone').addEventListener(n,e=>e.preventDefault()));$('#dropZone').ondrop=async e=>{for(const f of e.dataTransfer.files)await importFile(f);};
+$('#exportJson').onclick=exportConfig;$('#exportTsv').onclick=exportTsv;$('#exportSymbols').onclick=exportSymbols;
+$('#clearLocal').onclick=()=>{if(confirm('清除本機資料和未送出的修改？雲端檔案不會被改動。')){localStorage.removeItem(STORE);localStorage.removeItem(LEGACY);location.reload();}};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#autoPull').checked)pull(false);});
+window.addEventListener('beforeunload',e=>{if(pending.size){e.preventDefault();e.returnValue='';}});
+restore();
+
+</script>
+</body>
+</html>
