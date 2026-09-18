@@ -1,4 +1,4 @@
-<!doctype html> 
+<!doctype html>
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
@@ -15,10 +15,7 @@
   <div class="top"><div><div class="title">漢字 Symbol 調試器</div><div class="sub">漢字 → symbol · 從雲端 JSON 載入，共用同一份分類</div></div><div class="status" id="saveStatus">尚未修改</div></div>
   <div class="tabs"><button class="tab on" data-tab="annotate">文章調試</button><button class="tab" data-tab="symbols">Symbol 集合</button><button class="tab" data-tab="data">資料與同步</button></div>
 
-  <div class="syncbar"><span id="cloudStatus">尚未連結資料</span><span class="muted" id="pendingStatus">未送出 0 項</span>
-    <button class="btn primary" id="saveNow" disabled>立即存檔</button>
-<button class="btn" id="setupCloud">設定雲端</button>
-<button class="btn" id="refreshCloud">重新讀取</button></div>
+  <div class="syncbar"><span id="cloudStatus">尚未連結資料</span><span class="muted" id="pendingStatus">未送出 0 項</span><button class="btn" id="setupCloud">設定雲端</button><button class="btn" id="refreshCloud">重新讀取</button></div>
   <section id="annotate" class="section on">
     <div class="panel">
       <textarea id="article" class="text article" placeholder="貼上中文文章或句子。相同漢字共用同一個 symbol，修改一次會全部同步。"></textarea>
@@ -47,7 +44,7 @@
       <h2>雲端資料來源</h2>
       <p class="muted">預設讀取 jeffeuxMartin/ime-hanzi-hint 的 JSON，也接受 GitHub repository、Gist 或其他公開 JSON 網址。分類表由雲端檔案載入，HTML 不內嵌字表。</p>
       <div class="row"><input id="cloudUrl" class="text grow" type="url" placeholder="GitHub repository、Gist 或 JSON 網址" aria-label="雲端 JSON 網址"><button class="btn primary" id="connectCloud">連線並載入</button></div>
-      <div class="row controls"><label class="lock"><input type="checkbox" id="autoPull"> 每 15 秒檢查更新；切回此頁也重新讀取</label><button class="btn" id="disconnectCloud">中斷連線</button></div>
+      <div class="row controls"><label class="lock"><input type="checkbox" id="autoPull" checked> 每 15 秒檢查更新；切回此頁也重新讀取</label><button class="btn" id="disconnectCloud">中斷連線</button></div>
       <div id="gistFileRow" class="row controls" hidden><label for="gistFiles">JSON 檔案</label><select class="text" id="gistFiles"></select></div>
       <p class="muted">同一網址可在手機與電腦使用。尚未送出的修改會保留；同一筆資料發生分歧時，請在下方選擇。本機快取可供斷線時繼續使用。</p>
       <div id="conflicts" hidden></div>
@@ -111,15 +108,7 @@ function remember(){
  try{localStorage.setItem(STORE,JSON.stringify({base,pending:[...pending],source,article:$('#article').value,unique:$('#uniqueOnly').checked,poll:$('#autoPull').checked}));cached=true;$('#saveStatus').textContent='本機暫存 '+new Date().toLocaleTimeString();}
  catch(e){cached=false;$('#saveStatus').textContent='本機暫存失敗，請匯出 JSON';}
  $('#pendingStatus').textContent=`未送出 ${pending.size} 項${conflicts.size?' · '+conflicts.size+' 項衝突':''}`;
- const cannotSave =
-  !(source?.gistId || source?.repoFullName) ||
-  !token ||
-  busy ||
-  !pending.size ||
-  conflicts.size > 0;
-
-$('#pushNow').disabled = cannotSave;
-$('#saveNow').disabled = cannotSave;
+ $('#pushNow').disabled=!(source?.gistId||source?.repoFullName)||!token||busy||!pending.size||conflicts.size>0;
 }
 function rebuild(){config=clone(base);for(const p of pending.values())put(config,p.group,p.key,p.next);}
 function reconcile(incoming){
@@ -245,9 +234,7 @@ async function pull(fresh=false){
  catch(e){setStatus('讀取失敗，保留目前資料：'+e.message,true);}
  finally{busy=false;remember();}
 }
-function startPolling(){
-  clearInterval(pullTimer);
-}
+function startPolling(){clearInterval(pullTimer);if($('#autoPull').checked)pullTimer=setInterval(()=>{if(document.visibilityState==='visible')pull(false);},15000);}
 function disconnect(){source=null;token='';autoWrite=false;$('#autoWrite').checked=false;$('#gistToken').value='';$('#writeState').textContent='尚未啟用';clearInterval(pullTimer);$('#gistFileRow').hidden=true;setStatus('已中斷雲端連線；目前資料留在本機');remember();}
 async function enableWrite(){
  if(!(source?.gistId||source?.repoFullName))return toast('直接寫回目前支援 GitHub repository 或 Gist。');
@@ -257,9 +244,7 @@ async function enableWrite(){
  catch(e){token='';autoWrite=false;$('#autoWrite').checked=false;$('#writeState').textContent='未啟用：'+e.message;}
  finally{busy=false;remember();scheduleWrite();}
 }
-function scheduleWrite(){
-  clearTimeout(writeTimer);
-}
+function scheduleWrite(){clearTimeout(writeTimer);if(autoWrite&&token&&(source?.gistId||source?.repoFullName)&&pending.size&&!conflicts.size)writeTimer=setTimeout(()=>push(),1000);}
 async function push(){
  if(busy){scheduleWrite();return;}if(!(source?.gistId||source?.repoFullName)||!token||!pending.size)return;
  busy=true;setStatus('正在比對雲端並寫回…');
@@ -299,7 +284,7 @@ function restore(){
 }
 function tab(id){$$('.tab,.section').forEach(x=>x.classList.remove('on'));$(`[data-tab="${id}"]`).classList.add('on');$('#'+id).classList.add('on');if(id==='symbols')renderSymbols();}
 $$('.tab').forEach(b=>b.onclick=()=>tab(b.dataset.tab));$('#setupCloud').onclick=()=>tab('data');$('#connectCloud').onclick=connect;$('#refreshCloud').onclick=()=>pull(false);$('#disconnectCloud').onclick=disconnect;
-$('#autoPull').onchange=()=>{startPolling();remember();};$('#gistFiles').onchange=async()=>{if(busy)return;source.filename=$('#gistFiles').value;source.rawUrl='';await pull(true);};$('#enableWrite').onclick=enableWrite;$('#saveNow').onclick=()=>push();$('#autoWrite').onchange=()=>{autoWrite=$('#autoWrite').checked;remember();scheduleWrite();};
+$('#autoPull').onchange=()=>{startPolling();remember();};$('#gistFiles').onchange=async()=>{if(busy)return;source.filename=$('#gistFiles').value;source.rawUrl='';await pull(true);};$('#enableWrite').onclick=enableWrite;$('#pushNow').onclick=()=>push();$('#autoWrite').onchange=()=>{autoWrite=$('#autoWrite').checked;remember();scheduleWrite();};
 $('#renderBtn').onclick=()=>{shownLimit=1200;remember();renderCards();};$('#exampleBtn').onclick=()=>{$('#article').value='哈，今天喝水，明天喝茶。部首只是初始分類，我可以自由調整。';remember();renderCards();};
 $('#article').oninput=()=>{clearTimeout(window.articleTimer);window.articleTimer=setTimeout(()=>{shownLimit=1200;remember();renderCards();},250);};$('#viewFilter').onchange=renderCards;$('#uniqueOnly').onchange=()=>{renderCards();remember();};$('#undoBtn').onclick=undo;
 $('#nextUnassigned').onclick=()=>{const c=[...new Set(hanChars($('#article').value))].find(c=>!config.charSymbols[c]);if(c)openEditor(c);else toast('這篇文章都已分類');};$('#closeEditor').onclick=$('#shade').onclick=closeEditor;$('#choiceSearch').oninput=renderChoices;
